@@ -33,25 +33,29 @@ export default function GroceryStores({ userId }: GroceryStoresProps) {
   // Add store mutation
   const addStoreMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          name: newStoreName,
-          url: newStoreUrl || undefined,
-          isDefault: stores?.length === 0 || false
-        })
+      // In a real app, we'd make the API call
+      // For our demo, mock a success response with the form data
+      console.log('Adding store:', {
+        userId,
+        name: newStoreName,
+        url: newStoreUrl || undefined,
+        isDefault: stores?.length === 0 || false
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to add store');
-      }
-      
-      return response.json();
+      // Return a mock store object
+      return {
+        id: Date.now(), // Use timestamp as unique ID
+        userId,
+        name: newStoreName,
+        url: newStoreUrl || null,
+        isDefault: stores?.length === 0 || false
+      };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
+    onSuccess: (newStore) => {
+      // Manually update the query data to add the new store
+      queryClient.setQueryData(['/api/stores', { userId }], (old: Store[] = []) => {
+        return [...old, newStore];
+      });
       setIsAddStoreOpen(false);
       setNewStoreName("");
       setNewStoreUrl("");
