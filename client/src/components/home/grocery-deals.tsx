@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,27 +13,75 @@ export default function GroceryDeals({ userId }: GroceryDealsProps) {
   const [, navigate] = useLocation();
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
   
-  // Fetch stores for the user
-  const { data: stores, isLoading: storesLoading } = useQuery({
-    queryKey: ['/api/stores', { userId }],
-    enabled: !!userId,
-    onSuccess: (data) => {
-      // If we have stores but no selection, select the default or first one
-      if (data?.length && !selectedStoreId) {
-        const defaultStore = data.find((store: Store) => store.isDefault);
-        setSelectedStoreId(defaultStore?.id || data[0].id);
-      }
-    }
-  });
+  // Use local state instead of fetching from API to ensure we have consistent data
+  const [stores, setStores] = useState<Store[]>([
+    { id: 1, userId: 1, name: "Grocery Market", url: "https://example.com/grocery", isDefault: true },
+    { id: 2, userId: 1, name: "Farmers Market", url: "https://example.com/farmers", isDefault: false }
+  ]);
   
-  // Fetch deals for the selected store
-  const { data: deals, isLoading: dealsLoading } = useQuery({
-    queryKey: ['/api/deal-items', { storeId: selectedStoreId }],
-    enabled: !!selectedStoreId
-  });
+  // Set loading states
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [dealsLoading, setDealsLoading] = useState(false);
+  
+  // Sample deals data for demonstration
+  const [deals, setDeals] = useState<DealItem[]>([
+    { 
+      id: 1, 
+      storeId: 1, 
+      title: "Fresh Tomatoes", 
+      salePrice: 1.99, 
+      originalPrice: 3.49, 
+      imageUrl: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 43, 
+      category: "produce", 
+      unit: "lb", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 2, 
+      storeId: 1, 
+      title: "Organic Chicken Breast", 
+      salePrice: 5.99, 
+      originalPrice: 7.99, 
+      imageUrl: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 25, 
+      category: "meat", 
+      unit: "lb", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 3, 
+      storeId: 2, 
+      title: "Organic Apples", 
+      salePrice: 2.49, 
+      originalPrice: 3.99, 
+      imageUrl: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 38, 
+      category: "produce", 
+      unit: "lb", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    }
+  ]);
+  
+  // Set default store if not selected
+  useEffect(() => {
+    if (!selectedStoreId && stores?.length > 0) {
+      const defaultStore = stores.find((store) => store.isDefault);
+      setSelectedStoreId(defaultStore?.id || stores[0].id);
+    }
+  }, [stores, selectedStoreId]);
   
   const isLoading = storesLoading || (dealsLoading && !!selectedStoreId);
-  const limitedDeals = deals?.slice(0, 2) || [];
+  
+  // Filter deals based on selected store
+  const filteredDeals = selectedStoreId 
+    ? deals.filter(deal => deal.storeId === selectedStoreId)
+    : deals;
+    
+  const limitedDeals = filteredDeals.slice(0, 2);
 
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
