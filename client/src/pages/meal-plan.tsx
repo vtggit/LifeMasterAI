@@ -39,15 +39,22 @@ export default function MealPlanPage() {
   
   // Fetch meal plans for the selected week
   const { data: mealPlans, isLoading } = useQuery({
-    queryKey: ['/api/meal-plans', { userId, startDate, endDate }],
+    queryKey: ['/api/meal-plans', userId, startDate, endDate],
+    queryFn: async () => {
+      const response = await fetch(`/api/meal-plans?userId=${userId}&startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch meal plans');
+      }
+      return response.json();
+    },
     enabled: !!userId
   });
   
   // Filter meals for selected date
   const selectedDateString = formatDateForApi(selectedDate);
-  const mealsForSelectedDate = mealPlans?.filter((meal: MealPlan) => 
-    meal.date.startsWith(selectedDateString)
-  ) || [];
+  const mealsForSelectedDate = Array.isArray(mealPlans) 
+    ? mealPlans.filter((meal: MealPlan) => meal.date.startsWith(selectedDateString)) 
+    : [];
   
   // Group meals by type
   const breakfast = mealsForSelectedDate.find((meal: MealPlan) => meal.mealType === 'breakfast');

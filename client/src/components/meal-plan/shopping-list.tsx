@@ -25,7 +25,7 @@ export default function MealPlanShoppingList({ userId, date }: ShoppingListProps
   
   // Handle shopping lists data after it's loaded
   useEffect(() => {
-    if (shoppingLists) {
+    if (shoppingLists && Array.isArray(shoppingLists)) {
       // Find a shopping list for the selected date
       const listForDate = shoppingLists.find((list: ShoppingList) => 
         list.date.startsWith(formatDateString)
@@ -33,7 +33,7 @@ export default function MealPlanShoppingList({ userId, date }: ShoppingListProps
       
       if (listForDate) {
         setShoppingListId(listForDate.id);
-      } else if (shoppingLists.length) {
+      } else if (shoppingLists.length > 0) {
         // If no list for this date, use the most recent list
         setShoppingListId(shoppingLists[0].id);
       }
@@ -43,6 +43,13 @@ export default function MealPlanShoppingList({ userId, date }: ShoppingListProps
   // Fetch shopping list items
   const { data: selectedList, isLoading: itemsLoading } = useQuery({
     queryKey: ['/api/shopping-lists', shoppingListId],
+    queryFn: async () => {
+      const response = await fetch(`/api/shopping-lists/${shoppingListId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch shopping list');
+      }
+      return response.json();
+    },
     enabled: !!shoppingListId
   });
   
@@ -71,13 +78,47 @@ export default function MealPlanShoppingList({ userId, date }: ShoppingListProps
     return items.reduce((sum, item) => sum + (item.price || 0), 0);
   };
   
+  // Function to send shopping list to Instacart
+  const sendToInstacart = (items: ShoppingListItem[]) => {
+    if (!items || items.length === 0) {
+      alert("No items to add to Instacart");
+      return;
+    }
+    
+    // Create Instacart URL with shopping list items
+    // Note: This is a simplified implementation. In a production app, 
+    // we would use Instacart's API with proper authentication.
+    const baseUrl = "https://www.instacart.com/store/partner/search";
+    
+    // Format items for the URL
+    const itemsParam = items
+      .filter(item => !item.isChecked) // Only include unchecked items
+      .map(item => {
+        const quantity = item.quantity > 1 ? `${item.quantity}x ` : "";
+        const unit = item.unit ? ` ${item.unit}` : "";
+        return `${quantity}${item.name}${unit}`;
+      })
+      .join(",");
+    
+    if (!itemsParam) {
+      alert("No unchecked items to add to Instacart");
+      return;
+    }
+    
+    // Open Instacart in a new tab with the items
+    window.open(`${baseUrl}?q=${encodeURIComponent(itemsParam)}`, "_blank");
+  };
+  
   const isLoading = listsLoading || (itemsLoading && !!shoppingListId);
 
   return (
     <Card className="bg-white rounded-lg border border-gray-100 overflow-hidden">
       <CardHeader className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
         <h3 className="font-medium">Shopping List</h3>
-        <button className="text-primary text-sm flex items-center">
+        <button 
+          onClick={() => sendToInstacart(selectedList?.items || [])}
+          className="text-primary text-sm flex items-center hover:text-primary/80 transition-colors"
+        >
           <ShoppingCart size={14} className="mr-1" />
           Send to Instacart
         </button>
@@ -91,7 +132,7 @@ export default function MealPlanShoppingList({ userId, date }: ShoppingListProps
             <div className="h-6 bg-gray-100 rounded w-4/5"></div>
           </div>
         </CardContent>
-      ) : selectedList && selectedList.items?.length > 0 ? (
+      ) : selectedList && selectedList.items && selectedList.items.length > 0 ? (
         <CardContent className="px-4 py-3">
           {selectedList.items.map((item: ShoppingListItem) => (
             <div 
