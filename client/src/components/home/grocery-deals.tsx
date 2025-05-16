@@ -107,19 +107,28 @@ export default function GroceryDeals({ userId }: GroceryDealsProps) {
               <Skeleton className="h-8 w-28 rounded-full" />
             </>
           ) : (
-            stores?.map((store: Store) => (
+            <>
+              {stores?.map((store: Store) => (
+                <div 
+                  key={store.id}
+                  onClick={() => setSelectedStoreId(store.id)}
+                  className={`flex-shrink-0 px-3 py-1.5 ${
+                    selectedStoreId === store.id
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  } rounded-full text-sm cursor-pointer transition-colors`}
+                >
+                  {store.name}
+                </div>
+              ))}
               <div 
-                key={store.id}
-                onClick={() => setSelectedStoreId(store.id)}
-                className={`flex-shrink-0 px-3 py-1.5 ${
-                  selectedStoreId === store.id
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-600'
-                } rounded-full text-sm cursor-pointer transition-colors`}
+                onClick={() => navigate("/settings")}
+                className="flex-shrink-0 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm cursor-pointer hover:bg-gray-200"
               >
-                {store.name}
+                <Plus size={16} className="inline mr-1" />
+                Add Store
               </div>
-            ))
+            </>
           )}
         </div>
         

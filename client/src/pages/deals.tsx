@@ -97,14 +97,21 @@ export default function DealsPage() {
     }
   ]);
 
-  // Filter deals by category
+  // Filter deals by category and store
   const filteredDeals = selectedCategory === "all" 
-    ? deals 
-    : deals?.filter((deal: DealItem) => deal.category === selectedCategory);
+    ? deals?.filter((deal: DealItem) => deal.storeId === selectedStoreId) 
+    : deals?.filter((deal: DealItem) => 
+        deal.category === selectedCategory && deal.storeId === selectedStoreId
+      );
 
-  // Get unique categories from deals
+  // Get unique categories from deals for the selected store
   const categories = deals 
-    ? Array.from(new Set(deals.map((deal: DealItem) => deal.category).filter(Boolean)))
+    ? Array.from(new Set(
+        deals
+          .filter((deal: DealItem) => deal.storeId === selectedStoreId)
+          .map((deal: DealItem) => deal.category)
+          .filter((category): category is string => Boolean(category))
+      ))
     : [];
 
   return (
@@ -143,7 +150,7 @@ export default function DealsPage() {
               All Deals
             </div>
             
-            {categories.map((category: string) => (
+            {categories.map((category) => (
               <div 
                 key={category}
                 className={`flex-shrink-0 px-3 py-1.5 ${
