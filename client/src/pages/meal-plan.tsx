@@ -61,9 +61,10 @@ export default function MealPlanPage() {
           date: selectedDateString + "T00:00:00.000Z",
           mealType: "lunch",
           recipeId: 102,
-          recipeName: "Greek Salad",
-          notes: "Use fresh vegetables",
-          servings: 1
+          title: "Greek Salad",
+          description: "Use fresh vegetables",
+          prepTime: 15,
+          calories: 280
         },
         {
           id: 3,
@@ -71,9 +72,10 @@ export default function MealPlanPage() {
           date: selectedDateString + "T00:00:00.000Z",
           mealType: "dinner",
           recipeId: 103,
-          recipeName: "Grilled Chicken with Vegetables",
-          notes: "Marinate chicken for at least 2 hours",
-          servings: 4
+          title: "Grilled Chicken with Vegetables",
+          description: "Marinate chicken for at least 2 hours",
+          prepTime: 45,
+          calories: 520
         }
       ];
     },
@@ -87,9 +89,10 @@ export default function MealPlanPage() {
     : [];
   
   // Group meals by type
-  const breakfast = mealsForSelectedDate.find((meal: MealPlan) => meal.mealType === 'breakfast');
-  const lunch = mealsForSelectedDate.find((meal: MealPlan) => meal.mealType === 'lunch');
-  const dinner = mealsForSelectedDate.find((meal: MealPlan) => meal.mealType === 'dinner');
+  // Using 'as MealPlan' since we're using mock data that matches the structure
+  const breakfast = mealsForSelectedDate.find((meal) => meal.mealType === 'breakfast') as MealPlan;
+  const lunch = mealsForSelectedDate.find((meal) => meal.mealType === 'lunch') as MealPlan;
+  const dinner = mealsForSelectedDate.find((meal) => meal.mealType === 'dinner') as MealPlan;
 
   return (
     <>
