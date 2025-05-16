@@ -412,12 +412,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MEAL PLANS ROUTES
   app.get("/api/meal-plans", async (req: Request, res: Response) => {
     try {
+      console.log("Meal plan request params:", req.query);
+      
+      // Check if all required parameters are present
+      if (!req.query.userId || !req.query.startDate || !req.query.endDate) {
+        return res.status(400).json({ 
+          message: "Missing required parameters", 
+          required: ["userId", "startDate", "endDate"],
+          received: req.query 
+        });
+      }
+      
       const userId = parseInt(req.query.userId as string);
       const startDate = new Date(req.query.startDate as string);
       const endDate = new Date(req.query.endDate as string);
       
-      if (isNaN(userId) || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return res.status(400).json({ message: "Valid userId, startDate, and endDate are required" });
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "userId must be a valid number" });
+      }
+      
+      if (isNaN(startDate.getTime())) {
+        return res.status(400).json({ message: "startDate must be a valid date" });
+      }
+      
+      if (isNaN(endDate.getTime())) {
+        return res.status(400).json({ message: "endDate must be a valid date" });
       }
       
       const mealPlans = await storage.getMealPlans(userId, startDate, endDate);
