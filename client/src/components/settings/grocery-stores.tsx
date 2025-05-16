@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, ShoppingCart, MoreHorizontal } from "lucide-react";
+import { Plus, ShoppingCart, MoreHorizontal, Check } from "lucide-react";
 import { Store } from "@/types";
 import { 
   DropdownMenu,
@@ -19,142 +17,45 @@ interface GroceryStoresProps {
 }
 
 export default function GroceryStores({ userId }: GroceryStoresProps) {
-  const queryClient = useQueryClient();
-  const [isAddStoreOpen, setIsAddStoreOpen] = useState(false);
-  const [newStoreName, setNewStoreName] = useState("");
-  const [newStoreUrl, setNewStoreUrl] = useState("");
+  // Simplified UI with direct state management
+  const [storeList, setStoreList] = useState<Store[]>([
+    { id: 1, userId: 1, name: "Grocery Market", url: "https://example.com/grocery", isDefault: true },
+    { id: 2, userId: 1, name: "Farmers Market", url: "https://example.com/farmers", isDefault: false }
+  ]);
   
-  // Fetch stores with demo data fallback
-  const { data: stores, isLoading } = useQuery({
-    queryKey: ['/api/stores', { userId }],
-    queryFn: async () => {
-      try {
-        const response = await fetch(`/api/stores?userId=${userId}`);
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Failed to fetch stores');
-      } catch (error) {
-        console.log('Using demo data for stores');
-        // Return demo data for development
-        return [
-          { id: 1, userId: 1, name: "Grocery Market", url: "https://example.com/grocery", isDefault: true },
-          { id: 2, userId: 1, name: "Farmers Market", url: "https://example.com/farmers", isDefault: false }
-        ];
-      }
-    },
-    enabled: !!userId
-  });
+  // Add store form state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [storeName, setStoreName] = useState("");
+  const [storeUrl, setStoreUrl] = useState("");
   
-  // Add store mutation
-  const addStoreMutation = useMutation({
-    mutationFn: async () => {
-      try {
-        // Try to make a real API call first
-        const response = await fetch('/api/stores', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            name: newStoreName,
-            url: newStoreUrl || undefined,
-            isDefault: Array.isArray(stores) && stores.length === 0
-          })
-        });
-        
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Failed to add store');
-      } catch (error) {
-        console.log('Creating store with client-side data');
-        // Create a new store with client-side data
-        return {
-          id: Date.now(), // Use timestamp as unique ID
-          userId,
-          name: newStoreName,
-          url: newStoreUrl || null,
-          isDefault: Array.isArray(stores) && stores.length === 0
-        };
-      }
-    },
-    onSuccess: (newStore) => {
-      // Manually update the query data to add the new store
-      queryClient.setQueryData(['/api/stores', { userId }], (old: any) => {
-        const currentStores = Array.isArray(old) ? old : [];
-        return [...currentStores, newStore];
-      });
-      setIsAddStoreOpen(false);
-      setNewStoreName("");
-      setNewStoreUrl("");
-    }
-  });
-  
-  // Update store mutation
-  const updateStoreMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number, data: Partial<Store> }) => {
-      const response = await fetch(`/api/stores/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+  // Simple functions for store management
+  function addStore() {
+    if (storeName.trim()) {
+      const newStore = {
+        id: Date.now(),
+        userId,
+        name: storeName,
+        url: storeUrl || null,
+        isDefault: storeList.length === 0
+      };
       
-      if (!response.ok) {
-        throw new Error('Failed to update store');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
+      setStoreList([...storeList, newStore]);
+      setStoreName("");
+      setStoreUrl("");
+      setShowAddForm(false);
     }
-  });
+  }
   
-  // Delete store mutation
-  const deleteStoreMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/stores/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete store');
-      }
-      
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stores'] });
-    }
-  });
+  function setDefaultStore(id: number) {
+    setStoreList(storeList.map(store => ({
+      ...store,
+      isDefault: store.id === id
+    })));
+  }
   
-  const handleAddStore = () => {
-    if (newStoreName.trim()) {
-      addStoreMutation.mutate();
-    }
-  };
-  
-  const handleSetDefault = (id: number) => {
-    // First, set all stores to non-default
-    stores?.forEach((store: Store) => {
-      if (store.isDefault) {
-        updateStoreMutation.mutate({ 
-          id: store.id, 
-          data: { isDefault: false }
-        });
-      }
-    });
-    
-    // Then set the selected store as default
-    updateStoreMutation.mutate({ 
-      id, 
-      data: { isDefault: true }
-    });
-  };
-  
-  const handleDeleteStore = (id: number) => {
-    deleteStoreMutation.mutate(id);
-  };
+  function deleteStore(id: number) {
+    setStoreList(storeList.filter(store => store.id !== id));
+  }
 
   return (
     <Card className="bg-white rounded-lg border border-gray-100 overflow-hidden">
@@ -162,112 +63,103 @@ export default function GroceryStores({ userId }: GroceryStoresProps) {
         <h3 className="font-medium">Grocery Stores</h3>
       </CardHeader>
       <CardContent className="p-4">
-        {isLoading ? (
-          <div className="animate-pulse space-y-3">
-            <div className="h-16 bg-gray-200 rounded"></div>
-            <div className="h-16 bg-gray-200 rounded"></div>
-          </div>
-        ) : stores?.length > 0 ? (
-          <div className="space-y-3">
-            {stores.map((store: Store) => (
-              <div 
-                key={store.id}
-                className="flex items-center justify-between p-2 border border-gray-100 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <ShoppingCart className="text-red-600" size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium">{store.name}</h4>
-                    {store.isDefault && (
-                      <p className="text-xs text-gray-500">Default store</p>
-                    )}
-                  </div>
+        <div className="space-y-3">
+          {storeList.map((store) => (
+            <div 
+              key={store.id}
+              className="flex items-center justify-between p-2 border border-gray-100 rounded-lg"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="text-red-600" size={20} />
                 </div>
                 <div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal size={16} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {!store.isDefault && (
-                        <DropdownMenuItem onClick={() => handleSetDefault(store.id)}>
-                          Set as default
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => handleDeleteStore(store.id)}>
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <h4 className="text-sm font-medium">{store.name}</h4>
+                  {store.isDefault && (
+                    <p className="text-xs text-gray-500">Default store</p>
+                  )}
                 </div>
               </div>
-            ))}
-            
-            <Dialog open={isAddStoreOpen} onOpenChange={setIsAddStoreOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="flex items-center space-x-2 text-primary text-sm font-medium mt-4 p-0 h-auto"
-                >
-                  <Plus size={14} />
-                  <span>Add store</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Grocery Store</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="storeName">Store Name</Label>
-                    <Input 
-                      id="storeName"
-                      placeholder="Store name" 
-                      value={newStoreName}
-                      onChange={(e) => setNewStoreName(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="storeUrl">Store Website (optional)</Label>
-                    <Input 
-                      id="storeUrl"
-                      placeholder="https://example.com/weeklyad" 
-                      value={newStoreUrl}
-                      onChange={(e) => setNewStoreUrl(e.target.value)}
-                    />
-                  </div>
+              <div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal size={16} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {!store.isDefault && (
+                      <DropdownMenuItem onClick={() => setDefaultStore(store.id)}>
+                        Set as default
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => deleteStore(store.id)}>
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          ))}
+          
+          {/* Simple Add Store Form - no complex dialog */}
+          {showAddForm ? (
+            <div className="mt-4 border border-gray-200 rounded-md p-4">
+              <h4 className="text-sm font-medium mb-3">Add New Store</h4>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="storeName">Store Name</Label>
+                  <Input 
+                    id="storeName"
+                    placeholder="Store name" 
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                    className="mt-1"
+                  />
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddStoreOpen(false)}>
+                
+                <div>
+                  <Label htmlFor="storeUrl">Store Website (optional)</Label>
+                  <Input 
+                    id="storeUrl"
+                    placeholder="https://example.com/weeklyad" 
+                    value={storeUrl}
+                    onChange={(e) => setStoreUrl(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setStoreName("");
+                      setStoreUrl("");
+                    }}
+                  >
                     Cancel
                   </Button>
                   <Button 
-                    onClick={handleAddStore} 
-                    disabled={!newStoreName.trim() || addStoreMutation.isPending}
+                    onClick={addStore} 
+                    disabled={!storeName.trim()}
                   >
-                    {addStoreMutation.isPending ? 'Adding...' : 'Add Store'}
+                    Add Store
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        ) : (
-          <div className="text-center py-4">
-            <p className="text-gray-500">No grocery stores added</p>
+                </div>
+              </div>
+            </div>
+          ) : (
             <Button 
-              variant="outline" 
-              className="mt-2"
-              onClick={() => setIsAddStoreOpen(true)}
+              variant="ghost" 
+              className="flex items-center space-x-2 text-primary text-sm font-medium mt-4 p-0 h-auto"
+              onClick={() => setShowAddForm(true)}
             >
-              Add store
+              <Plus size={14} />
+              <span>Add store</span>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );
