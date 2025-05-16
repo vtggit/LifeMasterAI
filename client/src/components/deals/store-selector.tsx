@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Store } from "@/types";
 
@@ -11,11 +10,13 @@ interface StoreSelectorProps {
 
 export default function StoreSelector({ selectedStoreId, onSelectStore, userId }: StoreSelectorProps) {
   const [showAddStore, setShowAddStore] = useState(false);
-
-  const { data: stores, isLoading } = useQuery({
-    queryKey: ['/api/stores', { userId }],
-    enabled: !!userId
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Use demo store data instead of querying API
+  const [stores] = useState<Store[]>([
+    { id: 1, userId: 1, name: "Grocery Market", url: "https://example.com/grocery", isDefault: true },
+    { id: 2, userId: 1, name: "Farmers Market", url: "https://example.com/farmers", isDefault: false }
+  ]);
 
   if (isLoading) {
     return (

@@ -13,24 +13,89 @@ export default function DealsPage() {
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Fetch stores for the user
-  const { data: stores } = useQuery({
-    queryKey: ['/api/stores', { userId }],
-    enabled: !!userId,
-    onSuccess: (data) => {
-      // If we have stores but no selection, select the default or first one
-      if (data?.length && !selectedStoreId) {
-        const defaultStore = data.find((store: Store) => store.isDefault);
-        setSelectedStoreId(defaultStore?.id || data[0].id);
-      }
+  // Use local state for stores to ensure consistency with settings
+  const [stores] = useState<Store[]>([
+    { id: 1, userId: 1, name: "Grocery Market", url: "https://example.com/grocery", isDefault: true },
+    { id: 2, userId: 1, name: "Farmers Market", url: "https://example.com/farmers", isDefault: false }
+  ]);
+  
+  // Set default store if not selected
+  useEffect(() => {
+    if (!selectedStoreId && stores?.length > 0) {
+      const defaultStore = stores.find((store) => store.isDefault);
+      setSelectedStoreId(defaultStore?.id || stores[0].id);
     }
-  });
+  }, [stores, selectedStoreId]);
 
-  // Fetch deals for the selected store
-  const { data: deals, isLoading: dealsLoading } = useQuery({
-    queryKey: ['/api/deal-items', { storeId: selectedStoreId }],
-    enabled: !!selectedStoreId
-  });
+  // Sample deal data
+  const [dealsLoading, setDealsLoading] = useState(false);
+  const [deals] = useState<DealItem[]>([
+    { 
+      id: 1, 
+      storeId: 1, 
+      title: "Fresh Tomatoes", 
+      salePrice: 1.99, 
+      originalPrice: 3.49, 
+      imageUrl: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 43, 
+      category: "produce", 
+      unit: "lb", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 2, 
+      storeId: 1, 
+      title: "Organic Chicken Breast", 
+      salePrice: 5.99, 
+      originalPrice: 7.99, 
+      imageUrl: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 25, 
+      category: "meat", 
+      unit: "lb", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 3, 
+      storeId: 2, 
+      title: "Organic Apples", 
+      salePrice: 2.49, 
+      originalPrice: 3.99, 
+      imageUrl: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 38, 
+      category: "produce", 
+      unit: "lb", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 4, 
+      storeId: 1, 
+      title: "Whole Wheat Bread", 
+      salePrice: 3.49, 
+      originalPrice: 4.99, 
+      imageUrl: "https://images.unsplash.com/photo-1549931319-a545dcf3bc7b?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 30, 
+      category: "bakery", 
+      unit: "loaf", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 5, 
+      storeId: 2, 
+      title: "Organic Milk", 
+      salePrice: 4.49, 
+      originalPrice: 5.99, 
+      imageUrl: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=200&q=80", 
+      discountPercentage: 25, 
+      category: "dairy", 
+      unit: "gallon", 
+      validUntil: new Date().toISOString(), 
+      createdAt: new Date().toISOString()
+    }
+  ]);
 
   // Filter deals by category
   const filteredDeals = selectedCategory === "all" 
