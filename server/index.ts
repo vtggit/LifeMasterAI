@@ -56,15 +56,41 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Configure the application to serve on multiple ports as required
+  const primaryPort = 54903;
+  const secondaryPort = 59712;
+
+  // Start server on primary port
   server.listen({
-    port,
+    port: primaryPort,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on primary port ${primaryPort}`);
+  });
+
+  // Create a second server instance for the secondary port
+  const http = require('http');
+  const express = require('express');
+  const app2 = express();
+  app2.use(express.json());
+  app2.use(express.urlencoded({ extended: false }));
+
+  // Copy all routes from the main app to the second app
+  for (let route of Object.keys(app._router.stack)) {
+    if (typeof route === 'object' && route !== null) {
+      app2._router.stack.push(route);
+    }
+  }
+
+  const server2 = http.createServer(app2);
+
+  // Start server on secondary port
+  server2.listen({
+    port: secondaryPort,
+    host: "0.0.0.0",
+    reusePort: true,
+  }, () => {
+    log(`serving on secondary port ${secondaryPort}`);
   });
 })();
