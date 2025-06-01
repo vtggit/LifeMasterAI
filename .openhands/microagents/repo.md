@@ -30,11 +30,6 @@ The project consists of both client-side (React) and server-side (Express.js) co
 - TypeScript
 - Drizzle ORM for database interactions
 - Passport for authentication
-- WebSocket support (ws)
-
-### Database:
-- PostgreSQL (via Neondatabase serverless)
-- Connect-pg-simple for session storage
 
 ## Project Structure
 
@@ -52,9 +47,14 @@ The project consists of both client-side (React) and server-side (Express.js) co
 │   ├── index.html       # HTML template
 │   └── ...              # Other frontend files
 ├── server/              # Express backend application
+│   ├── routes/          # API route definitions
 │   ├── services/        # Business logic and service implementations
+│   ├── storage/         # Data access layer
+│   ├── vite/            # Vite configuration for development
 │   └── index.ts         # Entry point for the server
 ├── shared/              # Shared code between client and server
+│   ├── schema/          # Data schemas
+│   └── types/           # TypeScript type definitions
 ├── .gitignore           # Git ignore file
 ├── package.json         # NPM package configuration
 ├── tsconfig.json        # TypeScript configuration
@@ -67,7 +67,6 @@ The project consists of both client-side (React) and server-side (Express.js) co
 ### Prerequisites:
 - Node.js (v18 or later)
 - npm or yarn
-- PostgreSQL database (or use Neondatabase serverless)
 
 ### Development:
 
@@ -77,14 +76,19 @@ The project consists of both client-side (React) and server-side (Express.js) co
    npm install
    ```
 
-2. Set up environment variables by creating a `.env` file based on `.env.example`
+2. Build the project:
+   ```bash
+   npm run build
+   ```
 
 3. Run the development server:
    ```bash
    npm run dev
    ```
 
-4. The application will be available at http://localhost:5000
+4. The application will be available at:
+   - http://localhost:54903
+   - http://localhost:59712
 
 ### Production:
 
@@ -98,13 +102,35 @@ The project consists of both client-side (React) and server-side (Express.js) co
    npm start
    ```
 
+## API Endpoints
+
+The backend provides several API endpoints for different functionalities:
+
+- **Authentication**: `/api/auth/register`, `/api/auth/login`
+- **Family Members**: `/api/family-members`
+- **Stores**: `/api/stores`
+- **Dietary Preferences**: `/api/dietary-preferences`
+- **Recipes**: `/api/recipes`, `/api/recipe-ratings`
+- **Meal Plans**: `/api/meal-plans`
+- **Deals**: `/api/deal-items`
+
 ## Deployment
 
-The application is configured to serve both API and client from a single Express server on port 5000. For deployment, ensure that:
+The application is configured to serve both API and client from a single Express server on multiple ports (54903, 59712). For deployment, ensure that:
 
-1. The database connection string is properly configured in your environment variables
-2. All necessary ports are open (port 5000 is the primary port used)
-3. CORS settings allow requests from your frontend domain
+1. All necessary ports are open (ports 54903 and 59712)
+2. CORS settings allow requests from your frontend domain
+
+## Configuration
+
+The project uses Vite for the frontend build and Express.js for the backend API. The configuration files are:
+
+- `vite.config.ts`: Vite configuration with plugin settings
+- `server/index.ts`: Main server file with route registration and middleware setup
+
+### Server Configuration
+
+The server is configured to run on multiple ports (54903 and 59712) as required by the runtime environment. The configuration allows iframes, CORS requests, and access from any host.
 
 ## Contributing
 

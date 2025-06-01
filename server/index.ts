@@ -1,3 +1,7 @@
+
+
+
+import http from 'http';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -69,23 +73,18 @@ app.use((req, res, next) => {
     log(`serving on primary port ${primaryPort}`);
   });
 
-  // Create a second server instance for the secondary port
-  const http = require('http');
-  const express = require('express');
+  // Create a second Express app instance for the secondary port
   const app2 = express();
-  app2.use(express.json());
-  app2.use(express.urlencoded({ extended: false }));
+  await registerRoutes(app2);
 
-  // Copy all routes from the main app to the second app
-  for (let route of Object.keys(app._router.stack)) {
-    if (typeof route === 'object' && route !== null) {
-      app2._router.stack.push(route);
-    }
+  if (app.get("env") === "development") {
+    await setupVite(app2, http.createServer(app2));
+  } else {
+    serveStatic(app2);
   }
 
-  const server2 = http.createServer(app2);
-
   // Start server on secondary port
+  const server2 = http.createServer(app2);
   server2.listen({
     port: secondaryPort,
     host: "0.0.0.0",
@@ -94,3 +93,4 @@ app.use((req, res, next) => {
     log(`serving on secondary port ${secondaryPort}`);
   });
 })();
+
