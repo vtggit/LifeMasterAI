@@ -168,7 +168,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/stores", async (req: Request, res: Response) => {
     try {
-      const storeInput = insertStoreSchema.parse(req.body);
+      const userId = parseInt(req.query.userId as string);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid userId is required" });
+      }
+
+      const storeInput = insertStoreSchema.parse({
+        ...req.body,
+        userId
+      });
+      
       const store = await storage.createStore(storeInput);
       return res.status(201).json(store);
     } catch (error) {
@@ -180,12 +190,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/stores/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = parseInt(req.query.userId as string);
       
       if (isNaN(id)) {
         return res.status(400).json({ message: "Valid id is required" });
       }
+
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid userId is required" });
+      }
       
-      const storeInput = req.body;
+      const storeInput = {
+        ...req.body,
+        userId
+      };
       const store = await storage.updateStore(id, storeInput);
       
       if (!store) {
@@ -202,9 +220,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/stores/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = parseInt(req.query.userId as string);
       
       if (isNaN(id)) {
         return res.status(400).json({ message: "Valid id is required" });
+      }
+
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Valid userId is required" });
       }
       
       const success = await storage.deleteStore(id);
