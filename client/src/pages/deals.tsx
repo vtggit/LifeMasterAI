@@ -1,23 +1,30 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import StoreSelector from "@/components/deals/store-selector";
 import DealItemCard from "@/components/deals/deal-item";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Filter, SortDesc } from "lucide-react";
 import { DealItem, Store } from "@/types";
+import { storesApi } from "@/lib/api";
 
 export default function DealsPage() {
+  const queryClient = useQueryClient();
+  
   // In a real app we would fetch the authenticated user from a context or state management
   const [userId] = useState<number>(1);
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Use local state for stores to ensure consistency with settings
-  const [stores] = useState<Store[]>([
-    { id: 1, userId: 1, name: "Grocery Market", url: "https://example.com/grocery", isDefault: true },
-    { id: 2, userId: 1, name: "Farmers Market", url: "https://example.com/farmers", isDefault: false }
-  ]);
+  // Fetch stores from API
+  const { data: stores } = useQuery(
+    ['stores', userId],
+    () => storesApi.getStores(userId),
+    {
+      staleTime: 300000, // 5 minutes
+      cacheTime: 600000, // 10 minutes
+    }
+  );
   
   // Set default store if not selected
   useEffect(() => {
@@ -27,75 +34,16 @@ export default function DealsPage() {
     }
   }, [stores, selectedStoreId]);
 
-  // Sample deal data
-  const [dealsLoading, setDealsLoading] = useState(false);
-  const [deals] = useState<DealItem[]>([
-    { 
-      id: 1, 
-      storeId: 1, 
-      title: "Fresh Tomatoes", 
-      salePrice: 1.99, 
-      originalPrice: 3.49, 
-      imageUrl: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=200&q=80", 
-      discountPercentage: 43, 
-      category: "produce", 
-      unit: "lb", 
-      validUntil: new Date().toISOString(), 
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: 2, 
-      storeId: 1, 
-      title: "Organic Chicken Breast", 
-      salePrice: 5.99, 
-      originalPrice: 7.99, 
-      imageUrl: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=200&q=80", 
-      discountPercentage: 25, 
-      category: "meat", 
-      unit: "lb", 
-      validUntil: new Date().toISOString(), 
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: 3, 
-      storeId: 2, 
-      title: "Organic Apples", 
-      salePrice: 2.49, 
-      originalPrice: 3.99, 
-      imageUrl: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=200&q=80", 
-      discountPercentage: 38, 
-      category: "produce", 
-      unit: "lb", 
-      validUntil: new Date().toISOString(), 
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: 4, 
-      storeId: 1, 
-      title: "Whole Wheat Bread", 
-      salePrice: 3.49, 
-      originalPrice: 4.99, 
-      imageUrl: "https://images.unsplash.com/photo-1549931319-a545dcf3bc7b?auto=format&fit=crop&w=200&q=80", 
-      discountPercentage: 30, 
-      category: "bakery", 
-      unit: "loaf", 
-      validUntil: new Date().toISOString(), 
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: 5, 
-      storeId: 2, 
-      title: "Organic Milk", 
-      salePrice: 4.49, 
-      originalPrice: 5.99, 
-      imageUrl: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=200&q=80", 
-      discountPercentage: 25, 
-      category: "dairy", 
-      unit: "gallon", 
-      validUntil: new Date().toISOString(), 
-      createdAt: new Date().toISOString()
+  // Fetch deals from API
+  const { data: deals, isLoading: dealsLoading } = useQuery(
+    ['deals', selectedStoreId],
+    () => selectedStoreId ? storesApi.getDeals(userId, selectedStoreId) : Promise.resolve([]),
+    {
+      enabled: !!selectedStoreId,
+      staleTime: 300000, // 5 minutes
+      cacheTime: 600000, // 10 minutes
     }
-  ]);
+  );
 
   // Filter deals by category and store
   const filteredDeals = selectedCategory === "all" 
@@ -130,6 +78,24 @@ export default function DealsPage() {
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-lg">Weekly Deals</h2>
             <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => {
+                  if (selectedStoreId) {
+                    storesApi.syncDeals(userId, selectedStoreId)
+                      .then(() => {
+                        // Invalidate deals query to trigger a refresh
+                        queryClient.invalidateQueries(['deals', selectedStoreId]);
+                      })
+                      .catch(error => {
+                        console.error('Failed to sync deals:', error);
+                      });
+                  }
+                }}
+                className="px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium"
+                disabled={!selectedStoreId || dealsLoading}
+              >
+                {dealsLoading ? 'Syncing...' : 'Sync Deals'}
+              </button>
               <button className="p-2 rounded-lg bg-gray-100">
                 <Filter size={18} className="text-gray-600" />
               </button>
@@ -201,7 +167,7 @@ export default function DealsPage() {
                 </div>
               </div>
               <div className="mt-3 text-xs text-gray-500">
-                Last updated: {new Date().toLocaleDateString()} • New deals every Wednesday
+                Last synced: {new Date().toLocaleString()} • Next sync in {Math.ceil((300000 - (Date.now() % 300000)) / 60000)} minutes
               </div>
             </div>
           </div>

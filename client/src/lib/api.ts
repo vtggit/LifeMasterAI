@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Store } from '@/types/stores';
+import { DealItem } from '@/types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -35,6 +36,11 @@ export const storesApi = {
 
   syncDeals: async (userId: number, storeId: number): Promise<{ success: boolean; dealsCount: number }> => {
     const response = await api.post<{ success: boolean; dealsCount: number }>(`/stores/${storeId}/sync`, {}, { params: { userId } });
+    return response.data;
+  },
+
+  getDeals: async (userId: number, storeId: number): Promise<DealItem[]> => {
+    const response = await api.get<DealItem[]>(`/stores/${storeId}/deals`, { params: { userId } });
     return response.data;
   }
 };
