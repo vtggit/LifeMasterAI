@@ -15,7 +15,10 @@ export interface FamilyMember {
 }
 
 // Store types
-export interface Store {
+export * from './stores';
+
+// Legacy Store type for backward compatibility
+export interface LegacyStore {
   id: number;
   userId: number;
   name: string;

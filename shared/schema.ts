@@ -33,11 +33,16 @@ export const stores = pgTable("stores", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
+  type: text("type").notNull(),
   url: text("url"),
   isDefault: boolean("is_default").default(false).notNull(),
+  status: text("status").notNull(),
+  config: json("config"),
+  lastSync: timestamp("last_sync"),
+  errorMessage: text("error_message")
 });
 
-export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
+export const insertStoreSchema = createInsertSchema(stores).omit({ id: true, lastSync: true, errorMessage: true });
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Store = typeof stores.$inferSelect;
 
