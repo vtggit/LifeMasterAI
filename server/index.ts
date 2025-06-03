@@ -56,8 +56,8 @@ app.use((req, res, next) => {
   }
 
   // Configure the application to serve on multiple ports as required
-  const primaryPort = parseInt(process.env.PORT || "53261", 10);
-  const secondaryPort = parseInt(process.env.SECOND_PORT || "58861", 10);
+  const primaryPort = parseInt(process.env.PORT || "52793", 10);
+  const secondaryPort = parseInt(process.env.SECOND_PORT || "55429", 10);
 
   // Start server on primary port
   server.listen({

@@ -25,11 +25,11 @@ export default defineConfig({
   },
   server: {
     host: true, // Allow the server to be accessed from any host
-    port: 54903, // Use one of the required ports
+    port: 52793, // Primary port
     strictPort: true, // Ensure the specified port is used
     proxy: {
       // Proxy API requests to the backend server
-      '/api': 'http://localhost:54903',
+      '/api': 'http://localhost:52793',
     },
     cors: true, // Enable CORS for all origins
   },
