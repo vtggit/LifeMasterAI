@@ -17,14 +17,12 @@ export default function DealsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   // Fetch stores from API
-  const { data: stores } = useQuery(
-    ['stores', userId],
-    () => storesApi.getStores(userId),
-    {
-      staleTime: 300000, // 5 minutes
-      cacheTime: 600000, // 10 minutes
-    }
-  );
+  const { data: stores } = useQuery({
+    queryKey: ['stores', userId],
+    queryFn: () => storesApi.getStores(userId),
+    staleTime: 300000, // 5 minutes
+    gcTime: 600000, // 10 minutes
+  });
   
   // Set default store if not selected
   useEffect(() => {
@@ -35,15 +33,13 @@ export default function DealsPage() {
   }, [stores, selectedStoreId]);
 
   // Fetch deals from API
-  const { data: deals, isLoading: dealsLoading } = useQuery(
-    ['deals', selectedStoreId],
-    () => selectedStoreId ? storesApi.getDeals(userId, selectedStoreId) : Promise.resolve([]),
-    {
-      enabled: !!selectedStoreId,
-      staleTime: 300000, // 5 minutes
-      cacheTime: 600000, // 10 minutes
-    }
-  );
+  const { data: deals, isLoading: dealsLoading } = useQuery({
+    queryKey: ['deals', selectedStoreId],
+    queryFn: () => selectedStoreId ? storesApi.getDeals(userId, selectedStoreId) : Promise.resolve([]),
+    enabled: !!selectedStoreId,
+    staleTime: 300000, // 5 minutes
+    gcTime: 600000, // 10 minutes
+  });
 
   // Filter deals by category and store
   const filteredDeals = selectedCategory === "all" 

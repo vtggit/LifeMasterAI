@@ -1,15 +1,16 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import Database from 'better-sqlite3';
 import * as schema from './schema';
 
-// Create a PostgreSQL connection pool
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'lifemasterai',
-});
+// Create a SQLite database connection
+const sqlite = new Database('/workspace/LifeMasterAI/dev.db', { verbose: console.log });
+
+// Enable foreign keys
+sqlite.exec('PRAGMA foreign_keys = ON;');
 
 // Create a drizzle instance
-export const db = drizzle(pool, { schema });
+export const db = drizzle(sqlite, { schema });
+
+// Test the connection
+const test = sqlite.prepare('SELECT * FROM stores WHERE userId = ?').all(1);
+console.log('Test query result:', test);

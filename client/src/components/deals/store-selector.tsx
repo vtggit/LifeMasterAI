@@ -13,14 +13,12 @@ interface StoreSelectorProps {
 export default function StoreSelector({ selectedStoreId, onSelectStore, userId }: StoreSelectorProps) {
   const [showAddStore, setShowAddStore] = useState(false);
   // Fetch stores from API
-  const { data: stores, isLoading: storesLoading } = useQuery(
-    ['stores', userId],
-    () => storesApi.getStores(userId),
-    {
-      staleTime: 300000, // 5 minutes
-      cacheTime: 600000, // 10 minutes
-    }
-  );
+  const { data: stores, isLoading: storesLoading } = useQuery({
+    queryKey: ['stores', userId],
+    queryFn: () => storesApi.getStores(userId),
+    staleTime: 300000, // 5 minutes
+    gcTime: 600000, // 10 minutes
+  });
 
   if (storesLoading) {
     return (

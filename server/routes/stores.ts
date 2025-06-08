@@ -22,7 +22,6 @@ const storeConfigSchema = z.object({
     }).optional()
   }).optional()
 });
-
 // Get all stores for a user
 router.get('/', async (req, res) => {
   try {
@@ -31,17 +30,21 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'Valid userId is required' });
     }
 
-    const userStores = await db.select().from(stores).where(eq(stores.userId, userId));
-    res.json(userStores);
+    console.log(`Fetching stores for userId: ${userId}`);
+
+    // Use Drizzle ORM to fetch stores
+    const storesResult = await db.select().from(stores).where(eq(stores.userId, userId));
+    console.log('Drizzle result:', storesResult);
+
+    res.json(storesResult);
   } catch (error) {
     console.error('Error fetching stores:', error);
     res.status(500).json({ error: 'Failed to fetch stores' });
   }
-});
-
 // Add a new store
 router.post('/', async (req, res) => {
   try {
+    const { name, address, city, state, zipCode } = req.body;
     const userId = parseInt(req.query.userId as string);
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ error: 'Valid userId is required' });
@@ -114,6 +117,28 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating store:', error);
     res.status(500).json({ error: 'Failed to update store' });
+  }
+});
+
+// Get deals for a store
+router.get('/:id/deals', async (req, res) => {
+  try {
+    const userId = parseInt(req.query.userId as string);
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: 'Valid userId is required' });
+    }
+
+    const storeId = parseInt(req.params.id);
+    const deals = await db
+      .select()
+      .from(dealItems)
+      .where(eq(dealItems.storeId, storeId))
+      .orderBy(dealItems.discountPercentage);
+
+    res.json(deals);
+  } catch (error) {
+    console.error('Error fetching deals:', error);
+    res.status(500).json({ error: 'Failed to fetch deals' });
   }
 });
 

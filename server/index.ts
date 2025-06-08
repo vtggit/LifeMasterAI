@@ -42,22 +42,21 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Configure the application to serve on multiple ports as required
+  const primaryPort = parseInt(process.env.PORT || "52793", 10);
+  const secondaryPort = parseInt(process.env.SECOND_PORT || "55429", 10);
+
+  // Register API routes first
   const server = await registerRoutes(app);
 
   app.use(errorHandler);
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Setup Vite or static serving after API routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
-
-  // Configure the application to serve on multiple ports as required
-  const primaryPort = parseInt(process.env.PORT || "52793", 10);
-  const secondaryPort = parseInt(process.env.SECOND_PORT || "55429", 10);
 
   // Start server on primary port
   server.listen({
@@ -70,8 +69,11 @@ app.use((req, res, next) => {
 
   // Create a second Express app instance for the secondary port
   const app2 = express();
+
+  // Register API routes first
   await registerRoutes(app2);
 
+  // Setup Vite or static serving after API routes
   if (app.get("env") === "development") {
     await setupVite(app2, http.createServer(app2));
   } else {
