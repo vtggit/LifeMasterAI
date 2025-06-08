@@ -5,6 +5,7 @@ import http from 'http';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { errorHandler } from "./middleware/error";
 
 const app = express();
 app.use(express.json());
@@ -43,13 +44,7 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -61,8 +56,8 @@ app.use((req, res, next) => {
   }
 
   // Configure the application to serve on multiple ports as required
-  const primaryPort = 54903;
-  const secondaryPort = 59712;
+  const primaryPort = parseInt(process.env.PORT || "52793", 10);
+  const secondaryPort = parseInt(process.env.SECOND_PORT || "55429", 10);
 
   // Start server on primary port
   server.listen({
